@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css" integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p" crossorigin="anonymous"/>
+        <link rel="stylesheet" href="style.css">
+
+        <title>Quiet Nights</title>
+    </head>
+    <body>
+        <div id="app">
+            <img :src="triangles" alt="trianglebkd" id="triangles">
+            <div id="topstuff">
+                <img src="img/quietnightslogo.png" alt="">
+                <div>
+                    <i v-on:click="openFavoritesModal" class="fa fa-heart" style="font-size:18px;color:#454545;"></i>
+                    <h3 id="signout" v-on:click="logOutUser">{{signinout}}</h3>
+                </div>
+            </div>
+            <div id="signinupmodal">
+                <div v-if="showSignUpModal" id="form" class="form">
+                    <h1>SIGN UP</h1>
+                    <p class="errorp" id="registererror">{{registerError}}</p>
+                    <label for="fname">First Name</label>
+                    <input type="text" v-model="registerFName" name="fname" id="fname" class="formchild" required><br>
+                    <label for="lname">Last Name</label>
+                    <input type="text" v-model="registerLName" name="lname" id="lname" class="formchild"><br>
+                    <label for="email">Email Address</label>
+                    <p id="taken">*that email address is already taken</p>
+                    <input type="text" v-model="registerEmail" name="email" id="email" class="formchild"><br>
+                    <label for="password">Password</label>
+                    <input type="text" v-model="registerPlainpassword" name="password" id="password" class="formchild">
+                    <p id="loginp">Already a member? <span id="loginlink" v-on:click="toggleSignup" class="switch">Log in</span></p>
+                    <button v-on:click="registerUser(registerFName, registerLName, registerEmail, registerPlainpassword)" id="signup" class="formchild">SIGN UP</button>
+                </div>
+                <div v-if="showLogInModal" id="loginform" class="form">
+                    <h1>LOG IN</h1>
+                    <p class="errorp" id="autherror">{{loginError}}</p>
+                    <label for="loginemail">Email Address</label>
+                    <input type="text"  v-model="loginEmail" name="loginemail" id="loginemail" class="formchild"><br>
+                    <label for="loginpassword">Password</label>
+                    <input type="text" v-model="loginPlainpassword" name="loginpassword" id="loginpassword" class="formchild">
+                    <p id="loginp">Not a member? <span id="signuplink" v-on:click="toggleSignup" class="switch">Sign up</span></p>
+                    <button v-on:click="logInUser(loginEmail, loginPlainpassword)"  id="loginbtn" class="formchild">LOG IN</button>
+                </div>
+            </div>
+
+            <div id="mainpage" v-if="showMainPage">
+                <div id="favoriteslist" v-if="showFavoritesSidebar">
+                    <div id="favoritestopstuff">
+                        <h2>Favorites</h2>
+                        <h1 v-on:click="closeFavoritesModal">X</h1>
+                    </div>
+                    <div v-if="isSignedIn">
+                        <h4 v-on:click="addAnotherFavorite" id="addFavorite">Add New Favorite</h4>
+                        <div v-if="addFavoriteMode" id="newFavoriteForm">
+                            <input type="text" v-model="favoriteTitle" id="favoriteTitle" class="formchild" placeholder="Title"/>
+                            <input type="text" v-model="favoriteDesc" id="favoriteDesc" class="formchild" placeholder="Description"/>
+                            <h4 v-on:click="submitFavorite(favoriteTitle, favoriteDesc, currentFavoriteImg)" class="addfavoritebutton">Save</h4>
+                            <p v-if="notAllFilled" id="filledError">All the fields need to be filled in.</p>
+                        </div>
+                        <div>
+                            <div v-for="favorite in favorites" v-on:click="setCurrentFavorite(favorite.title, favorite.description, favorite._id, favorite.image)" class="favoritesListItem">
+                                <img :src="favorite.image" class="favoritesListImages"/>
+                                <div>
+                                    <h3>{{favorite.title}}</h3>
+                                    <h4>{{favorite.description}}</h4>
+                                </div>
+                                <br>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else>
+                        <h3>You need to be logged in to save favorite items.</h3>
+                    </div>
+                    
+                </div>
+
+                
+                <!-- probably gonna want a v-for loop here  -->
+                <div id="categories">
+                    <div v-for="category in categories" class="category">
+                        <h3 v-on:click="openCategoryModal(category.categoryName)">{{category.categoryName}}</h3>
+                        <div class="categoryitems">
+                            <div v-for="item in category.items.slice(0, 3)" class="categoryitem" v-on:click="setCurrentItem(item.caption, item.details, item.img, item._id)">
+                                <img :src="item.img"/>
+                                <p>{{item.caption}}</p>
+                                <p>{{item.details}}</p>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+
+            <div id="individualfavoritemodal" v-if="showIndividualFavoriteModal">
+                    <h1 class="closeX" v-on:click="closeIndividualFavoriteModal">X</h1>
+                    <img :src="currentFavoriteImg" class="individualmodalimg">
+                    <div class="options">
+                        <h3>{{currentFavoriteTitle}}</h3>
+                        <h4><i class="fa fa-download" style="font-size:18px;color:#454545;"></i>   Download</h4>
+                        <h4><i class="fa fa-print" style="font-size:18px;color:#454545;"></i>  Print</h4>
+                        <h4 v-on:click="removeFavorite(currentFavoriteID)"><i class="fa fa-trash" style="font-size:18px;color:#454545;"></i>  Remove From Favorites</h4>
+                        <h4 v-on:click="openEditFavorite"><i class="fa fa-edit" style="font-size:18px;color:#454545;"></i>  Edit</h4>
+                        <div v-if="editFavoriteMode" id="editFavoriteForm">
+                            <input placeholder="Title" type="text" id="editFavoriteTitle" v-model="updatedfavoriteTitle" class="formchild" />
+                            <input placeholder="Description" type="text" id="editFavoriteDesc" v-model="updatedfavoriteDesc" class="formchild"/>
+                            <h4 v-on:click="editFavorite(currentFavoriteID)" class="addfavoritebutton">Save</h4>
+                        </div>
+                    </div>
+                </div>
+
+            <div id="coloringpagesmodal" v-for="category in categories.slice(0, 1)" v-if="showColoringCategoryModal" class="category">
+                <h1 class="closeX" v-on:click="closeCategoryModal">X</h1>
+                <h2>{{category.categoryName}}</h2>
+                <div v-for="item in category.items.slice(0)" class="categorymodalitem" v-on:click="setCurrentItem(item.caption, item.details, item.img, item._id)">
+                    <img :src="item.img"/>
+                    <p>{{item.caption}}</p>
+                    <p>{{item.details}}</p>
+                </div>
+            </div>
+            <div id="soundsmodal" v-for="category in categories.slice(1, 2)" v-if="showSoundsCategoryModal" class="category">
+                <h1 class="closeX" v-on:click="closeCategoryModal">X</h1>
+                <h2>{{category.categoryName}}</h2>
+                <div v-for="item in category.items.slice(0)" class="categorymodalitem" v-on:click="setCurrentItem(item.caption, item.details, item.img, item._id)">
+                    <img :src="item.img"/>
+                    <p>{{item.caption}}</p>
+                    <p>{{item.details}}</p>
+                </div>
+            </div>
+            <div id="pbnmodal" v-for="category in categories.slice(2, 3)" v-if="showPBNCategoryModal" class="category">
+                <h1 class="closeX" v-on:click="closeCategoryModal">X</h1>
+                <h2>{{category.categoryName}}</h2>
+                <div v-for="item in category.items.slice(0)" class="categorymodalitem" v-on:click="setCurrentItem(item.caption, item.details, item.img, item._id)">
+                    <img :src="item.img"/>
+                    <p>{{item.caption}}</p>
+                    <p>{{item.details}}</p>
+                </div>
+            </div>
+
+            <div id="indiviualitemmodal" v-if="showIndividualItemModal">
+                <h1 class="closeX" v-on:click="closeItemModal">X</h1>
+                <img :src="currentItemImg" class="individualmodalimg">
+                <div class="options">
+                    <h3>{{currentItemCaption}}</h3>
+                    <h4><i class="fa fa-download" style="font-size:18px;color:#454545;"></i>   Download</h4>
+                    <h4><i class="fa fa-print" style="font-size:18px;color:#454545;"></i>  Print</h4>
+                    <h4 v-on:click="addItemToFavorites"><i class="fa fa-heart" style="font-size:18px;color:#454545;"></i>  Add to Favorites</h4>
+                </div>
+                
+            </div>
+
+            <div v-if="isAdmin" class="admin">
+                <p id="welcomeadmin">Welcome, admin</p>
+                <button v-on:click="openUsersDisplay" class="adminbtn">See All Users</button>
+                <div v-if="readyToDisplayAdmin" width="80%">
+                    <div v-for="user in users" class="adminUser">
+                        <h3>{{user.firstName}} {{user.lastName}}</h3>
+                        <h4>{{user.email}}</h4>
+                        <div class="adminUserFavorites">
+                            <div v-for="favorite in user.favorites" class="adminUserFavorite">
+                                <img :src="favorite.image" v-on:click="setCurrentFavorite(favorite.title, favorite.description, favorite._id, favorite.image)" class="favoritesListImages"/>
+                                <div>
+                                    <h3>{{favorite.title}}</h3>
+                                    <h4>{{favorite.description}}</h4>
+                                </div>
+                                <br>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                    
+        </div>
+    </body>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="app.js"></script>
+</html>
